@@ -3,6 +3,7 @@
 namespace Shapecode\Bundle\Doctrine\SessionHandlerBundle\Session\Handler;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Shapecode\Bundle\Doctrine\SessionHandlerBundle\Entity\Session;
 use Shapecode\Bundle\Doctrine\SessionHandlerBundle\Entity\SessionInterface;
 
@@ -14,16 +15,23 @@ use Shapecode\Bundle\Doctrine\SessionHandlerBundle\Entity\SessionInterface;
  */
 class DoctrineHandler implements \SessionHandlerInterface
 {
-
-    /** @var EntityManagerInterface */
+    /**
+     * @var EntityManagerInterface
+     */
     protected $entityManager;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * @param EntityManagerInterface $entityManager
      */
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, LoggerInterface $logger)
     {
         $this->entityManager = $entityManager;
+        $this->logger = $logger;
     }
 
     /**
@@ -31,8 +39,6 @@ class DoctrineHandler implements \SessionHandlerInterface
      */
     public function close()
     {
-//        $this->entityManager->flush();
-
         return true;
     }
 
@@ -41,7 +47,11 @@ class DoctrineHandler implements \SessionHandlerInterface
      */
     public function destroy($session_id)
     {
-        return $this->getRepository()->destroy($session_id);
+        if (!$this->getRepository()->destroy($session_id)) {
+            $this->logger->warning(sprintf('Unable to destroy %s', $session_id));
+        }
+
+        return true;
     }
 
     /**
@@ -69,7 +79,7 @@ class DoctrineHandler implements \SessionHandlerInterface
     {
         $session = $this->getSession($session_id);
 
-        if (!$session || is_null($session->getSessionData())) {
+        if (!$session || $session->getSessionData() === null) {
             return '';
         }
 

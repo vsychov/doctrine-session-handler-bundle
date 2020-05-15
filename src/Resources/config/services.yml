@@ -1,4 +1,6 @@
 services:
     shapecode_doctrine_session_handler.handler:
         class: Shapecode\Bundle\Doctrine\SessionHandlerBundle\Session\Handler\DoctrineHandler
-        arguments: ["@doctrine.orm.entity_manager"]
+        arguments:
+         - "@doctrine.orm.entity_manager"
+         - "@logger"
